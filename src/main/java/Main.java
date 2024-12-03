@@ -3,9 +3,13 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.credentials.ClientCredentials;
-import se.michaelthelin.spotify.model_objects.specification.Playlist;
+import se.michaelthelin.spotify.model_objects.specification.Paging;
+import se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
 import se.michaelthelin.spotify.requests.authorization.client_credentials.ClientCredentialsRequest;
-import se.michaelthelin.spotify.requests.data.playlists.GetPlaylistRequest;
+import se.michaelthelin.spotify.requests.data.playlists.GetPlaylistsItemsRequest;
+
+import java.util.Arrays;
+import java.util.Date;
 
 public class Main {
     @Option(name = "--client-id", required = true)
@@ -21,7 +25,7 @@ public class Main {
     private String archivePlaylistId = "";
 
     @Option(name = "--song-lifetime")
-    private String songLifetime = "30";
+    private long songLifetime = 30;
 
     public static void main(String[] args) {
         try {
@@ -57,24 +61,30 @@ public class Main {
             accessToken = credentials.getAccessToken();
         }
 
-        SpotifyApi spotifyApi = new SpotifyApi.Builder().setAccessToken(accessToken).build();
+        final SpotifyApi spotifyApi = new SpotifyApi.Builder().setAccessToken(accessToken).build();
 
-        final GetPlaylistRequest getPlaylistRequest = spotifyApi.getPlaylist(activePlaylistId).build();
+        final GetPlaylistsItemsRequest getPlaylistsItemsRequest = spotifyApi.getPlaylistsItems(activePlaylistId).build();
 
-        Playlist playlist = null;
+        Paging<PlaylistTrack> playlistItems = null;
         try {
-            playlist = getPlaylistRequest.execute();
+            playlistItems = getPlaylistsItemsRequest.execute();
         } catch (final Exception ex) {
-            System.out.println("Error getting playlist: " + ex.getMessage());
+            System.out.println("Error getting playlist items: " + ex.getMessage());
             System.exit(1);
         }
 
-        if (playlist == null) {
+        if (playlistItems == null) {
             System.out.println("No playlist found");
             throw new RuntimeException("No playlist found");
-        } else {
-            System.out.println("Playlist name: " + playlist.getName());
         }
+
+        Arrays.stream(playlistItems.getItems())
+                .filter(item -> {
+                    final Date currentDate = new Date();
+                    final long diffInMillis = currentDate.getTime() - item.getAddedAt().getTime();
+                    final long daysSinceAddition = diffInMillis / (1000 * 60 * 60 * 24);
+                    return daysSinceAddition >= songLifetime;
+                }).forEach(item -> System.out.println("Item: " + item.getTrack().getName()));
     }
 
     private void parseCommandLineOptions(final String[] args) throws IllegalArgumentException
