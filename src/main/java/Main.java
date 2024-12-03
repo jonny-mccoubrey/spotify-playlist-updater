@@ -1,3 +1,5 @@
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.credentials.ClientCredentials;
@@ -13,10 +15,10 @@ public class Main {
     private String clientSecret = "";
 
     @Option(name = "--active-playlist", required = true)
-    private String activePlaylistId = "7fLOrnMe4gg4RkS8Ax9EiE";
+    private String activePlaylistId = "";
 
     @Option(name = "--archive-playlist", required = true)
-    private String archivePlaylistId = "5a9m0Ayb8S9b0qBlMNXsdO";
+    private String archivePlaylistId = "";
 
     @Option(name = "--song-lifetime")
     private String songLifetime = "30";
@@ -32,10 +34,11 @@ public class Main {
 
     public void doMain(String[] args)
     {
+        parseCommandLineOptions(args);
+
         final ClientCredentialsRequest request = new ClientCredentialsRequest.Builder(clientId, clientSecret)
                 .grant_type("client_credentials")
                 .build();
-
 
         ClientCredentials credentials = null;
         try {
@@ -71,6 +74,18 @@ public class Main {
             throw new RuntimeException("No playlist found");
         } else {
             System.out.println("Playlist name: " + playlist.getName());
+        }
+    }
+
+    private void parseCommandLineOptions(final String[] args) throws IllegalArgumentException
+    {
+        final CmdLineParser parser = new CmdLineParser(this);
+        try {
+            parser.parseArgument(args);
+        } catch (final CmdLineException ex) {
+            parser.printUsage(System.err);
+            System.out.println("Error parsing arguments: " + ex.getMessage());
+            throw new IllegalArgumentException();
         }
     }
 }
