@@ -1,22 +1,21 @@
+import org.apache.hc.core5.http.ParseException;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import se.michaelthelin.spotify.SpotifyApi;
-import se.michaelthelin.spotify.model_objects.credentials.ClientCredentials;
+import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
 import se.michaelthelin.spotify.model_objects.specification.Paging;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
-import se.michaelthelin.spotify.requests.authorization.client_credentials.ClientCredentialsRequest;
+import se.michaelthelin.spotify.requests.data.playlists.AddItemsToPlaylistRequest;
 import se.michaelthelin.spotify.requests.data.playlists.GetPlaylistsItemsRequest;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Date;
 
 public class Main {
-    @Option(name = "--client-id", required = true)
-    private String clientId = "";
-
-    @Option(name = "--client-secret", required = true)
-    private String clientSecret = "";
+    @Option(name = "--access-token", required = true)
+    private String accessToken = "";
 
     @Option(name = "--active-playlist", required = true)
     private String activePlaylistId = "";
@@ -40,29 +39,7 @@ public class Main {
     {
         parseCommandLineOptions(args);
 
-        final ClientCredentialsRequest request = new ClientCredentialsRequest.Builder(clientId, clientSecret)
-                .grant_type("client_credentials")
-                .build();
-
-        ClientCredentials credentials = null;
-        try {
-            credentials = request.execute();
-        } catch (final Exception ex) {
-            System.out.println("Error getting credentials: " + ex.getMessage());
-            System.exit(1);
-        }
-
-        final String accessToken;
-        if (credentials == null)
-        {
-            System.out.println("No credentials found");
-            throw new RuntimeException("No credentials found");
-        } else {
-            accessToken = credentials.getAccessToken();
-        }
-
         final SpotifyApi spotifyApi = new SpotifyApi.Builder().setAccessToken(accessToken).build();
-
         final GetPlaylistsItemsRequest getPlaylistsItemsRequest = spotifyApi.getPlaylistsItems(activePlaylistId).build();
 
         Paging<PlaylistTrack> playlistItems = null;
@@ -84,7 +61,18 @@ public class Main {
                     final long diffInMillis = currentDate.getTime() - item.getAddedAt().getTime();
                     final long daysSinceAddition = diffInMillis / (1000 * 60 * 60 * 24);
                     return daysSinceAddition >= songLifetime;
-                }).forEach(item -> System.out.println("Item: " + item.getTrack().getName()));
+                }).forEach(item -> {
+                    System.out.println("Item URI: " + item.getTrack().getUri());
+                    final AddItemsToPlaylistRequest addItemsToPlaylistRequest = spotifyApi
+                            .addItemsToPlaylist(archivePlaylistId, new String[]{item.getTrack().getUri()})
+                            .build();
+
+                    try {
+                        addItemsToPlaylistRequest.execute();
+                    } catch (IOException | SpotifyWebApiException | ParseException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 
     private void parseCommandLineOptions(final String[] args) throws IllegalArgumentException
