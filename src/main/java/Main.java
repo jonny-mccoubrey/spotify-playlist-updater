@@ -1,3 +1,5 @@
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
 import org.apache.hc.core5.http.ParseException;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -8,6 +10,7 @@ import se.michaelthelin.spotify.model_objects.specification.Paging;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
 import se.michaelthelin.spotify.requests.data.playlists.AddItemsToPlaylistRequest;
 import se.michaelthelin.spotify.requests.data.playlists.GetPlaylistsItemsRequest;
+import se.michaelthelin.spotify.requests.data.playlists.RemoveItemsFromPlaylistRequest;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -62,15 +65,26 @@ public class Main {
                     final long daysSinceAddition = diffInMillis / (1000 * 60 * 60 * 24);
                     return daysSinceAddition >= songLifetime;
                 }).forEach(item -> {
-                    System.out.println("Item URI: " + item.getTrack().getUri());
+                    final String[] track = new String[]{item.getTrack().getUri()};
+                    final JsonArray jsonTrack = JsonParser.parseString("[{\"uri\":\"" + track[0] + "\"}]").getAsJsonArray();
+
                     final AddItemsToPlaylistRequest addItemsToPlaylistRequest = spotifyApi
-                            .addItemsToPlaylist(archivePlaylistId, new String[]{item.getTrack().getUri()})
+                            .addItemsToPlaylist(archivePlaylistId, track)
                             .build();
 
                     try {
                         addItemsToPlaylistRequest.execute();
+
+                        final RemoveItemsFromPlaylistRequest removeItemsFromPlaylistRequest = spotifyApi
+                                .removeItemsFromPlaylist(activePlaylistId, jsonTrack)
+                                .build();
+
+                        removeItemsFromPlaylistRequest.execute();
+
+                        System.out.printf("Successfully moved %s %n", item.getTrack().getName());
+
                     } catch (IOException | SpotifyWebApiException | ParseException e) {
-                        throw new RuntimeException(e);
+                        System.out.println("Error: Adding/Removing item to playlist: " + e.getMessage());
                     }
                 });
     }
