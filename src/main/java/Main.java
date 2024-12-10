@@ -6,8 +6,10 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
+import se.michaelthelin.spotify.model_objects.credentials.AuthorizationCodeCredentials;
 import se.michaelthelin.spotify.model_objects.specification.Paging;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
+import se.michaelthelin.spotify.requests.authorization.authorization_code.AuthorizationCodeRefreshRequest;
 import se.michaelthelin.spotify.requests.data.playlists.AddItemsToPlaylistRequest;
 import se.michaelthelin.spotify.requests.data.playlists.GetPlaylistsItemsRequest;
 import se.michaelthelin.spotify.requests.data.playlists.RemoveItemsFromPlaylistRequest;
@@ -17,8 +19,14 @@ import java.util.Arrays;
 import java.util.Date;
 
 public class Main {
-    @Option(name = "--access-token", required = true)
-    private String accessToken = "";
+    @Option(name = "--client-id", required = true)
+    private String clientId = "";
+
+    @Option(name = "--client-secret", required = true)
+    private String clientSecret = "";
+
+    @Option(name = "--refresh-token", required = true)
+    private String refreshToken = "";
 
     @Option(name = "--active-playlist", required = true)
     private String activePlaylistId = "";
@@ -42,7 +50,22 @@ public class Main {
     {
         parseCommandLineOptions(args);
 
-        final SpotifyApi spotifyApi = new SpotifyApi.Builder().setAccessToken(accessToken).build();
+        final SpotifyApi spotifyApi = new SpotifyApi.Builder()
+                .setClientId(clientId)
+                .setClientSecret(clientSecret)
+                .setRefreshToken(refreshToken)
+                .build();
+
+        final AuthorizationCodeRefreshRequest refreshRequest = spotifyApi.authorizationCodeRefresh().build();
+
+        try {
+            final AuthorizationCodeCredentials authorizationCodeCredentials = refreshRequest.execute();
+
+            spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken());
+        } catch (IOException | SpotifyWebApiException | ParseException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+
         final GetPlaylistsItemsRequest getPlaylistsItemsRequest = spotifyApi.getPlaylistsItems(activePlaylistId).build();
 
         Paging<PlaylistTrack> playlistItems = null;
