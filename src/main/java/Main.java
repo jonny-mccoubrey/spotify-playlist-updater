@@ -95,19 +95,16 @@ public class Main {
                             .addItemsToPlaylist(archivePlaylistId, track)
                             .build();
 
+                    final RemoveItemsFromPlaylistRequest removeItemsFromPlaylistRequest = spotifyApi
+                            .removeItemsFromPlaylist(activePlaylistId, jsonTrack)
+                            .build();
+
                     try {
                         addItemsToPlaylistRequest.execute();
-
-                        final RemoveItemsFromPlaylistRequest removeItemsFromPlaylistRequest = spotifyApi
-                                .removeItemsFromPlaylist(activePlaylistId, jsonTrack)
-                                .build();
-
                         removeItemsFromPlaylistRequest.execute();
-
-                        System.out.printf("Successfully moved %s %n", item.getTrack().getName());
-
+                        System.out.printf("Successfully moved track '%s' %n", item.getTrack().getName());
                     } catch (IOException | SpotifyWebApiException | ParseException e) {
-                        System.out.println("Error: Adding/Removing item to playlist: " + e.getMessage());
+                        System.out.println("Error: Moving track: " + e.getMessage());
                     }
                 });
     }
