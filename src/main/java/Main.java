@@ -60,6 +60,7 @@ public class Main {
 
         try {
             final AuthorizationCodeCredentials authorizationCodeCredentials = refreshRequest.execute();
+
             spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken());
         } catch (IOException | SpotifyWebApiException | ParseException e) {
             System.out.println("Error: " + e.getMessage());
@@ -93,20 +94,20 @@ public class Main {
                     final AddItemsToPlaylistRequest addItemsToPlaylistRequest = spotifyApi
                             .addItemsToPlaylist(archivePlaylistId, track)
                             .build();
+
                     try {
                         addItemsToPlaylistRequest.execute();
-                    } catch (IOException | SpotifyWebApiException | ParseException e) {
-                        System.out.println("Error: Adding item to playlist: " + e.getMessage());
-                    }
 
-                    final RemoveItemsFromPlaylistRequest removeItemsFromPlaylistRequest = spotifyApi
-                            .removeItemsFromPlaylist(activePlaylistId, jsonTrack)
-                            .build();
+                        final RemoveItemsFromPlaylistRequest removeItemsFromPlaylistRequest = spotifyApi
+                                .removeItemsFromPlaylist(activePlaylistId, jsonTrack)
+                                .build();
 
-                    try {
                         removeItemsFromPlaylistRequest.execute();
+
+                        System.out.printf("Successfully moved %s %n", item.getTrack().getName());
+
                     } catch (IOException | SpotifyWebApiException | ParseException e) {
-                        System.out.println("Error: Removing item from playlist: " + e.getMessage());
+                        System.out.println("Error: Adding/Removing item to playlist: " + e.getMessage());
                     }
                 });
     }
