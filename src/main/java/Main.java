@@ -31,10 +31,10 @@ public class Main {
     @Option(name = "--refresh-token", required = true)
     private String refreshToken = "";
 
-    @Option(name = "--active-playlist", required = true)
+    @Option(name = "--active-playlist-id", required = true)
     private String activePlaylistId = "";
 
-    @Option(name = "--archive-playlist", required = true)
+    @Option(name = "--archive-playlist-id", required = true)
     private String archivePlaylistId = "";
 
     @Option(name = "--song-lifetime")
@@ -65,9 +65,9 @@ public class Main {
 
         try {
             final AuthorizationCodeCredentials authorizationCodeCredentials = refreshRequest.execute();
-
             spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken());
-        } catch (IOException | SpotifyWebApiException | ParseException ex) {
+            LOGGER.info("Successfully set access token");
+        } catch (final IOException | SpotifyWebApiException | ParseException ex) {
             LOGGER.error("Error getting access token: {}", ex.getMessage());
         }
 
@@ -77,16 +77,16 @@ public class Main {
         try {
             playlistItems = getPlaylistsItemsRequest.execute();
         } catch (final Exception ex) {
-            LOGGER.error("Error getting playlist name: {}", ex.getMessage());
+            LOGGER.error("Error getting playlist items from active playlist: {}", ex.getMessage());
             System.exit(1);
         }
 
         if (playlistItems == null) {
             LOGGER.error("No playlist found");
-            throw new RuntimeException("No playlist found");
+            System.exit(1);
         }
 
-        List<PlaylistTrack> filteredTracks = Arrays.stream(playlistItems.getItems())
+        final List<PlaylistTrack> filteredTracks = Arrays.stream(playlistItems.getItems())
                         .filter(item -> {
                             final Date currentDate = new Date();
                             final long diffInMillis = currentDate.getTime() - item.getAddedAt().getTime();
