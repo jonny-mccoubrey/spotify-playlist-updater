@@ -1,4 +1,4 @@
-package com.app.main;
+package com.app.cli;
 
 import com.app.model.Request;
 import com.app.util.SpotifyUtil;
@@ -12,7 +12,7 @@ import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
 
 import java.io.IOException;
 
-public class Main {
+public class CliRunner {
     @Option(name = "--client-id", required = true)
     private String clientId = "";
 
@@ -31,11 +31,11 @@ public class Main {
     @Option(name = "--song-lifetime")
     private long songLifetime = 30;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CliRunner.class);
 
     public static void main(String[] args) {
         try {
-            new Main().doMain(args);
+            new CliRunner().doMain(args);
         } catch (final IOException | ParseException | SpotifyWebApiException ex) {
             LOGGER.error(ex.getMessage());
             System.exit(1);
