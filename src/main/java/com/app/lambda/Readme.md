@@ -15,7 +15,7 @@ docker run \
 
 2. Exec into container 
 ```
-docker exec -it <container Id> /bin/sh
+docker exec -it localstack /bin/sh
 ```
 
 3. In the container's shell, create our lambda function:
