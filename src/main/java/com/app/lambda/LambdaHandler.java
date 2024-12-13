@@ -4,20 +4,27 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.logging.LogLevel;
+import com.app.model.Request;
+import com.app.util.SpotifyUtil;
+import org.apache.hc.core5.http.ParseException;
+import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
 
-public class LambdaHandler implements RequestHandler<Request, Response> {
+import java.io.IOException;
+
+public class LambdaHandler implements RequestHandler<Request, String> {
 
     @Override
-    public Response handleRequest(Request request, Context context)
+    public String handleRequest(Request request, Context context)
     {
         LambdaLogger LOGGER = context.getLogger();
-        LOGGER.log("Processing question from " + request.name(), LogLevel.INFO);
 
-        return new Response("Successfully processed request from " + request.name());
+        try {
+            SpotifyUtil.processPlaylist(request);
+
+            return "Successfully processed playlist";
+        } catch (final IOException | ParseException | SpotifyWebApiException ex) {
+            LOGGER.log("Error processing playlist: " + ex.getMessage(), LogLevel.ERROR);
+            return "Error processing playlist: " + ex.getMessage();
+        }
     }
-
 }
-
-record Request(String name, String question) {}
-
-record Response(String answer) {}
