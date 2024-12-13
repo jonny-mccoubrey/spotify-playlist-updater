@@ -16,7 +16,7 @@ public class LambdaHandler implements RequestHandler<Request, String> {
     @Override
     public String handleRequest(Request request, Context context)
     {
-        LambdaLogger LOGGER = context.getLogger();
+        final LambdaLogger LOGGER = context.getLogger();
 
         try {
             SpotifyUtil.processPlaylist(request);
