@@ -36,6 +36,7 @@ awslocal lambda invoke \
                  "clientSecret": "<client-secret>" \
                  "refreshToken": "<refresh-token>" \
                  "activePlaylistId": "<active-playlist-id>" \
-                 "archivePlaylistId": "<archive-playlist-id>"
+                 "archivePlaylistId": "<archive-playlist-id>" \
+                 "songLifetime": <song-lifetime> \
                }' output.txt
 ```
